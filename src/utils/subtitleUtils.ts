@@ -58,13 +58,37 @@ export const exportToWebVTTKaraoke = (lines: SubtitleLine[]): string => {
 };
 
 /**
+ * Syllabifies a text string using a rough heuristic for PT/EN
+ */
+export const syllabifyText = (text: string): string => {
+  return text.split('\n').map(line => {
+    return line.split(' ').map(word => {
+      if (word.length <= 3) return word;
+      // Heuristic for syllable breaking:
+      // Break between vowels and consonants when followed by another vowel
+      // Also handles common Portuguese and English patterns
+      return word
+        .replace(/([aeiouyáéíóúâêôãõ])([bcdfghjklmnpqrstvwxz])([aeiouyáéíóúâêôãõ])/gi, '$1-$2$3')
+        // Break double consonants
+        .replace(/([bcdfghjklmnpqrstvwxz])([bcdfghjklmnpqrstvwxz])(?=[aeiouyáéíóúâêôãõ])/gi, (match, p1, p2) => {
+          const doubles = ['ch', 'lh', 'nh', 'rr', 'ss', 'tr', 'pr', 'br', 'fr', 'gr', 'cl', 'pl', 'bl', 'fl', 'gl'];
+          if (doubles.includes((p1 + p2).toLowerCase())) return p1 + p2;
+          return p1 + '-' + p2;
+        });
+    }).join(' ');
+  }).join('\n');
+};
+
+/**
  * Parses raw text into SubtitleLines (initial state)
  */
 export const parseLyrics = (text: string): SubtitleLine[] => {
   return text
     .split(/\n\n+/) // Split by double newlines into "stanzas" or lines
     .map((stanza, idx) => {
-      const words = stanza.trim().split(/\s+/).map((word, wIdx) => ({
+      // Treat dashes as delimiters while preserving them
+      const processedStanza = stanza.replace(/-/g, '- ');
+      const words = processedStanza.trim().split(/\s+/).map((word, wIdx) => ({
         id: `word-${idx}-${wIdx}-${Math.random().toString(36).substr(2, 9)}`,
         text: word,
         start: 0,

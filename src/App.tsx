@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { useAudio } from './hooks/useAudio';
 import { useSync } from './hooks/useSync';
-import { parseLyrics, formatTime } from './utils/subtitleUtils';
+import { parseLyrics, formatTime, syllabifyText } from './utils/subtitleUtils';
 import { YouTubePlayer } from './components/YouTubePlayer';
 import { SyncPreview } from './components/SyncPreview';
 import { Timeline } from './components/Timeline';
@@ -25,7 +25,8 @@ import {
   Code, 
   Maximize,
   Minimize,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -200,7 +201,26 @@ export default function App() {
             <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
               <Type size={14} className="text-amber-500/70" /> Lyric Editor
             </h3>
-            <span className="text-[10px] font-mono text-amber-500">{lines.reduce((acc, l) => acc + l.words.length, 0)} WORDS</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  setRawLyrics(syllabifyText(rawLyrics));
+                }}
+                className="p-1 px-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-md text-amber-500 transition-all flex items-center gap-1.5 group/syll"
+                title="Auto Syllabify (Magic Break)"
+              >
+                <Sparkles size={11} className="group-hover/syll:rotate-12 transition-transform" />
+                <span className="text-[9px] font-black uppercase tracking-wider">Syllabify</span>
+              </button>
+              <button 
+                onClick={() => setRawLyrics('')}
+                className="p-1.5 bg-white/5 hover:bg-red-500/20 border border-white/10 rounded-md text-slate-400 hover:text-red-500 transition-all"
+                title="Clear All"
+              >
+                <Trash2 size={12} />
+              </button>
+              <span className="text-[10px] font-mono text-amber-500/60 ml-1">{lines.reduce((acc, l) => acc + l.words.length, 0)} WORDS</span>
+            </div>
           </div>
 
           <div className="flex-1 flex flex-col gap-3">

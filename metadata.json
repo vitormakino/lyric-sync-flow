@@ -1,0 +1,6 @@
+{
+  "name": "Lyric Sync Flow",
+  "description": "High-precision word-level synchronization for vocalists. Generate and edit synchronized lyrics with millisecond accuracy, perfectly aligned for visual performance tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

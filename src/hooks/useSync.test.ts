@@ -27,22 +27,39 @@ describe('useSync Integration', () => {
 
     // First tap at 1.0s (Word 1 start)
     act(() => {
-      result.current.tap();
+      result.current.tapStart();
     });
 
     expect(result.current.lines[0].words[0].start).toBe(1.0);
+    
+    // Release at 1.5s (Word 1 end)
+    currentTime = 1.5;
+    rerender();
+    act(() => {
+      result.current.tapEnd();
+    });
+
+    expect(result.current.lines[0].words[0].end).toBe(1.5);
     expect(result.current.currentIndex).toEqual({ lineIdx: 0, wordIdx: 1 });
 
-    // Move time and tap again at 2.5s (Word 2 start, Word 1 end)
+    // Move time and press again at 2.5s (Word 2 start)
     currentTime = 2.5;
     rerender();
     
     act(() => {
-      result.current.tap();
+      result.current.tapStart();
     });
 
-    expect(result.current.lines[0].words[0].end).toBe(2.5);
     expect(result.current.lines[0].words[1].start).toBe(2.5);
+    
+    // Release at 3.0s (Word 2 end)
+    currentTime = 3.0;
+    rerender();
+    act(() => {
+      result.current.tapEnd();
+    });
+
+    expect(result.current.lines[0].words[1].end).toBe(3.0);
     expect(result.current.currentIndex).toEqual({ lineIdx: 1, wordIdx: 0 }); // Moved to next line
 
     // Verify last word end time logic
@@ -54,7 +71,7 @@ describe('useSync Integration', () => {
     
     act(() => {
       result.current.setIsSyncing(true);
-      result.current.tap();
+      result.current.tapStart();
       result.current.resetSync();
     });
 

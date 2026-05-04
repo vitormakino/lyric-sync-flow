@@ -53,12 +53,16 @@ export function SyncPreview({ lines, currentTime, currentIndex, isSyncing }: Syn
                                                 currentTime >= word.start && 
                                                 (word.end === 0 || currentTime <= word.end);
 
+                    const isWordBeingRecorded = isSyncing && word.start > 0 && word.end === 0;
+
                     return (
                       <span
                         key={word.id}
                         className={`
                           relative text-3xl md:text-5xl font-black italic tracking-tighter transition-all duration-500
-                          ${isCurrentWordSync ? 'text-amber-500 scale-125 drop-shadow-[0_0_25px_rgba(245,158,11,0.6)] z-20' : ''}
+                          ${isCurrentWordSync ? 'text-amber-500 scale-125 z-20' : ''}
+                          ${isWordBeingRecorded ? 'text-amber-500 drop-shadow-[0_0_25px_rgba(245,158,11,0.8)] scale-130' : ''}
+                          ${isCurrentWordSync && !isWordBeingRecorded ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] opacity-70' : ''}
                           ${isWordActivePlayback ? 'text-amber-500 drop-shadow-[0_0_20px_rgba(245,158,11,0.7)]' : ''}
                           ${!isCurrentWordSync && !isWordActivePlayback ? (word.start > 0 ? 'text-emerald-400' : 'text-white') : ''}
                           ${!isCurrentWordSync && !isWordActivePlayback && isCurrentLine && word.start === 0 ? 'opacity-40' : ''}

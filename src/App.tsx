@@ -56,18 +56,24 @@ export default function App() {
     currentIndex, 
     isSyncing, 
     setIsSyncing, 
-    tap, 
+    tapStart,
+    tapEnd,
     undoTap,
-    resetSync, 
+    resetSync,
     updateWord 
   } = useSync(initialLines, playerState.currentTime);
 
   const [lastTapTime, setLastTapTime] = useState(0);
 
-  const handleTap = () => {
+  const handleTapStart = () => {
     if (!playerState.isPlaying) return;
-    tap();
+    tapStart();
     setLastTapTime(Date.now());
+  };
+
+  const handleTapEnd = () => {
+    if (!playerState.isPlaying) return;
+    tapEnd();
   };
 
   // Handle keyboard shortcuts globally
@@ -80,12 +86,12 @@ export default function App() {
       }
 
       // Space logic: 
-      // 1. If playing: Mark syllable (tap)
+      // 1. If playing: Mark start (tapStart)
       // 2. If paused: Start playback
       if (e.code === 'Space') {
         e.preventDefault();
         if (playerState.isPlaying) {
-          handleTap();
+          if (!e.repeat) handleTapStart();
         } else {
           togglePlay();
         }
@@ -103,8 +109,19 @@ export default function App() {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && playerState.isPlaying) {
+        e.preventDefault();
+        handleTapEnd();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [playerState.isPlaying, togglePlay, undoTap, isFullscreen]);
 
   // Automatically enable syncing mode when playing if lyrics are present
@@ -243,7 +260,7 @@ export default function App() {
               <Info size={12} /> Pro Tip
             </h4>
             <p className="text-[11px] text-slate-400 leading-snug">
-              Use millisecond mode (Shift + Space) for faster tempo songs to ensure intra-word precision.
+              Hold the spacebar or mouse button to mark the exact duration of each word for professional-grade timing.
             </p>
           </div>
         </section>
@@ -252,7 +269,8 @@ export default function App() {
         <section className="lg:col-span-6 flex flex-col gap-6 order-first lg:order-none">
           {/* Teleprompter Stage */}
           <div 
-            onClick={handleTap}
+            onPointerDown={(e) => { e.preventDefault(); handleTapStart(); }}
+            onPointerUp={(e) => { e.preventDefault(); handleTapEnd(); }}
             className={`
               flex-1 rounded-3xl border p-6 md:p-12 min-h-[350px] md:min-h-[450px] flex flex-col items-center justify-center relative overflow-hidden group shadow-2xl transition-all duration-500
               ${playerState.isPlaying 
@@ -300,8 +318,8 @@ export default function App() {
                       <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">PLAY/PAUSE</span>
                     </div>
                     <div className="flex items-center gap-2 px-2 py-0.5 bg-black/50 rounded-md border border-white/10">
-                      <kbd className="px-1 bg-white/10 rounded text-[9px] font-mono">SPACE</kbd>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">TAP</span>
+                      <kbd className="px-1 bg-white/10 rounded text-[9px] font-mono">HOLD SPACE</kbd>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">SYNC DURATION</span>
                     </div>
                     <div className="flex items-center gap-2 px-2 py-0.5 bg-black/50 rounded-md border border-white/10">
                       <kbd className="px-1 bg-white/10 rounded text-[9px] font-mono">BACKSPACE</kbd>
@@ -578,7 +596,8 @@ export default function App() {
 
           {/* Immersive Lyrics Stage */}
           <div 
-            onClick={handleTap}
+            onPointerDown={(e) => { e.preventDefault(); handleTapStart(); }}
+            onPointerUp={(e) => { e.preventDefault(); handleTapEnd(); }}
             className="w-full h-full flex flex-col items-center justify-center relative cursor-crosshair"
           >
              <SyncPreview 

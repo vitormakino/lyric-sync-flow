@@ -11,30 +11,14 @@ export function useSync(initialLines: SubtitleLine[], currentTime: number) {
     setCurrentIndex({ lineIdx: 0, wordIdx: 0 });
   }, [initialLines]);
 
-  const tap = useCallback(() => {
+  const tapStart = useCallback(() => {
     if (!isSyncing) return;
 
     setLines(prevLines => {
       const newLines = [...prevLines];
       const { lineIdx, wordIdx } = currentIndex;
 
-      // Handle the case where we tap to end the very last word
-      if (lineIdx >= newLines.length) {
-        setIsSyncing(false);
-        // Set end time for the last word of the last line
-        if (newLines.length > 0) {
-          const lastLineIdx = newLines.length - 1;
-          const lastLine = { ...newLines[lastLineIdx] };
-          const lastWords = [...lastLine.words];
-          if (lastWords.length > 0) {
-            lastWords[lastWords.length - 1].end = currentTime;
-            lastLine.end = currentTime;
-            lastLine.words = lastWords;
-            newLines[lastLineIdx] = lastLine;
-          }
-        }
-        return newLines;
-      }
+      if (lineIdx >= newLines.length) return newLines;
 
       const currentLine = { ...newLines[lineIdx] };
       const currentWords = [...currentLine.words];
@@ -43,23 +27,35 @@ export function useSync(initialLines: SubtitleLine[], currentTime: number) {
       // Set start time for current word
       currentWord.start = currentTime;
       
-      // If there was a previous word, set its end time
-      if (wordIdx > 0) {
-        currentWords[wordIdx - 1].end = currentTime;
-      } else if (lineIdx > 0) {
-        // If it's the first word of a line, set the end of the last word of previous line
-        const prevLine = { ...newLines[lineIdx - 1] };
-        const prevWords = [...prevLine.words];
-        prevWords[prevWords.length - 1].end = currentTime;
-        prevLine.words = prevWords;
-        prevLine.end = currentTime; // Update line end
-        newLines[lineIdx - 1] = prevLine;
-      }
-
       // Update line start if it's the first word
       if (wordIdx === 0) {
         currentLine.start = currentTime;
       }
+
+      currentWords[wordIdx] = currentWord;
+      currentLine.words = currentWords;
+      newLines[lineIdx] = currentLine;
+
+      return newLines;
+    });
+  }, [currentIndex, currentTime, isSyncing]);
+
+  const tapEnd = useCallback(() => {
+    if (!isSyncing) return;
+
+    setLines(prevLines => {
+      const newLines = [...prevLines];
+      const { lineIdx, wordIdx } = currentIndex;
+
+      if (lineIdx >= newLines.length) return newLines;
+
+      const currentLine = { ...newLines[lineIdx] };
+      const currentWords = [...currentLine.words];
+      const currentWord = { ...currentWords[wordIdx] };
+
+      // Set end time for current word
+      currentWord.end = currentTime;
+      currentLine.end = currentTime;
 
       currentWords[wordIdx] = currentWord;
       currentLine.words = currentWords;
@@ -74,13 +70,12 @@ export function useSync(initialLines: SubtitleLine[], currentTime: number) {
         nextWordIdx = 0;
       }
 
-      // If we just mapped the last word of the last line, we don't return yet
-      // because we need one more tap to set its end time.
-      // So currentIndex will go one step "beyond" the last word.
-      
       setCurrentIndex({ lineIdx: nextLineIdx, wordIdx: nextWordIdx });
       
-      // If we are finished with all words, the next tap will enter the "end recording" logic at top
+      if (nextLineIdx >= newLines.length) {
+        setIsSyncing(false);
+      }
+
       return newLines;
     });
   }, [currentIndex, currentTime, isSyncing]);
@@ -149,7 +144,8 @@ export function useSync(initialLines: SubtitleLine[], currentTime: number) {
     currentIndex,
     isSyncing,
     setIsSyncing,
-    tap,
+    tapStart,
+    tapEnd,
     undoTap,
     resetSync,
     updateWord
